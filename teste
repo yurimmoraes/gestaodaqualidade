@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha de Verificação de Serviço - Piso Vinílico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .status-btn-group button.active {
+            filter: brightness(1.2);
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .photo-upload-input {
+            display: none;
+        }
+        .photo-preview {
+            max-width: 150px;
+            max-height: 150px;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+            object-fit: cover;
+        }
+        .checklist-grid-header {
+             display: grid;
+             grid-template-columns: 40px 1fr 1.5fr 1fr;
+             gap: 1rem;
+        }
+        .checklist-grid-row {
+            display: grid;
+            grid-template-columns: 40px 1fr 1.5fr 1fr;
+            gap: 1rem;
+        }
+         @media (max-width: 768px) {
+            .checklist-grid-header {
+                display: none;
+            }
+            .checklist-grid-row {
+                grid-template-columns: 1fr;
+                border: 1px solid #4a5568;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+            }
+            .checklist-grid-row > div:before {
+                content: attr(data-label);
+                font-weight: 600;
+                display: block;
+                margin-bottom: 0.5rem;
+                color: #a0aec0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <div id="pdf-content" class="bg-gray-800 p-8 rounded-lg">
+            <header class="text-center mb-8 border-b border-gray-600 pb-4">
+                <h1 class="text-3xl font-bold text-white">Ficha de Verificação de Serviço (FVS)</h1>
+                <p class="text-xl font-semibold text-blue-400 mt-2">FVS 013: REVESTIMENTO PISO VINÍLICO</p>
+            </header>
+    
+            <main>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <label for="obra" class="block text-sm font-medium text-gray-300 mb-2">Obra / Projeto:</label>
+                        <select id="obra" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option>MOOV</option>
+                            <option>BELA TERRA</option>
+                            <option>GRAN LIFE</option>
+                            <option>CONNECT</option>
+                            <option>NEXT II</option>
+                            <option>OUTROS</option>
+                        </select>
+                         <div id="outros_obra_container" class="mt-4 hidden">
+                            <label for="obra_outros" class="block text-sm font-medium text-gray-300 mb-2">Especifique a Obra (Outros):</label>
+                            <input type="text" id="obra_outros" placeholder="Nome da obra" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="local" class="block text-sm font-medium text-gray-300 mb-2">Local da Inspeção:</label>
+                        <input type="text" id="local" placeholder="Ex: Torre A, Apto 101" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <div class="min-w-full">
+                        <div class="checklist-grid-header bg-gray-700 p-3 rounded-t-lg font-semibold text-sm text-gray-300">
+                            <div class="text-center">#</div>
+                            <div>Item de Inspeção</div>
+                            <div>Método de Verificação</div>
+                            <div class="text-center">Avaliação</div>
+                        </div>
+                        <div id="checklist-container" class="bg-gray-800 rounded-b-lg">
+                            <!-- Itens serão injetados aqui -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seção da Nota Final -->
+                <div id="score-section" class="mt-8 pt-6 border-t border-gray-600">
+                    <h3 class="text-xl font-semibold mb-4 text-white">Resultado Final da Inspeção</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                        <div class="bg-gray-700 p-4 rounded-lg">
+                            <p class="text-sm text-gray-400">Conformidades (A + AR)</p>
+                            <p id="compliant-count" class="text-2xl font-bold text-green-400">0</p>
+                        </div>
+                        <div class="bg-gray-700 p-4 rounded-lg">
+                            <p class="text-sm text-gray-400">Não Conformidades (NA)</p>
+                            <p id="non-compliant-count" class="text-2xl font-bold text-red-400">0</p>
+                        </div>
+                        <div class="bg-gray-700 p-4 rounded-lg">
+                            <p class="text-sm text-gray-400">Nota Final</p>
+                            <p id="final-score" class="text-2xl font-bold text-blue-400">0%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-gray-600">
+                     <h3 class="text-xl font-semibold mb-4 text-white">Informações Adicionais</h3>
+                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label for="inspecionado_por" class="block text-sm font-medium text-gray-300 mb-2">Inspecionado por:</label>
+                            <input type="text" id="inspecionado_por" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="executado_por" class="block text-sm font-medium text-gray-300 mb-2">Executado por:</label>
+                            <input type="text" id="executado_por" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                           <label for="data_inspecao" class="block text-sm font-medium text-gray-300 mb-2">Data da Inspeção:</label>
+                           <input type="date" id="data_inspecao" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white" style="color-scheme: dark;">
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div class="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+            <button id="generate-pdf-btn" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-500">
+                Gerar e Baixar PDF
+            </button>
+             <button id="clear-form-btn" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-red-500">
+                Limpar Formulário
+            </button>
+        </div>
+        <div id="loader-container" class="mt-4 flex justify-center" style="display: none;">
+            <div class="loader"></div>
+            <p class="ml-4 self-center">Gerando PDF, por favor aguarde...</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const STORAGE_KEY = 'fvsPisoVinilicoData_v4'; // Changed key for score feature
+            let checklistItems = [];
+
+            const initialItems = [
+                 { id: 1, item: "Limpeza e organização do local", method: "O local está limpo e livre de obstruções?" },
+                { id: 2, item: "Verificação de lote de produção", method: "Conferir se os lotes nas embalagens são os mesmos para garantir uniformidade." },
+                { id: 3, item: "Armazenamento", method: "Produto em local fechado, coberto, ventilado (15-27°C), caixas na horizontal (máx. 11)." },
+                { id: 4, item: "Contrapiso", method: "Base deve estar livre, limpa, seca, curada, impermeabilizada, nivelada e firme." },
+                { id: 5, item: "Bases Permitidas", method: "Cimentado, Cerâmica/porcelanato, Mármores e Granitos, Mezanino, Piso aquecido." },
+                { id: 6, item: "Contrapiso seco e curado", method: "Teste do plástico (50x50cm) por 24h. Não pode haver umidade." },
+                { id: 7, item: "Absorção", method: "Contrapisos porosos (absorvem gota d'água < 1 min) devem receber prime." },
+                { id: 8, item: "Firmeza", method: "Base sem partes soltas. Resistência à compressão > 15MPa." },
+                { id: 9, item: "Adesivo", method: "Cola mantida em temperatura ambiente (15-27°C) 24h antes e durante." },
+                { id: 10, item: "Aclimatação do vinílico", method: "Peças fora da caixa, empilhadas de forma plana por 24h (15-27°C)." },
+                { id: 11, item: "Produtos de mesmo lote", method: "Confirmar se todas as caixas para o mesmo cômodo são do mesmo lote." },
+                { id: 12, item: "Tamanho mínimo das peças", method: "Peças devem ter no mínimo 20cm de comprimento e 5cm de largura." },
+                { id: 13, item: "Autonivelante", method: "Uso de massa de preparação ou autonivelante para corrigir irregularidades." },
+                { id: 14, item: "Marcação do eixo", method: "Marcar o eixo de início da instalação conforme definido em croqui." },
+                { id: 15, item: "Conferência das cotas de nível", method: "As cotas de nível foram conferidas conforme projeto?" },
+                { id: 16, item: "Aplicação do adesivo", method: "O ambiente de instalação deve estar ventilado." },
+                { id: 17, item: "Execução da aplicação", method: "Aplicar adesivo conforme orientações do fabricante (espátula, tempo, etc.)." },
+                { id: 18, item: "Remoção do resíduo", method: "O resíduo de cola foi removido após a instalação?" },
+            ];
+
+            const container = document.getElementById('checklist-container');
+            const formElements = {
+                obra: document.getElementById('obra'),
+                obra_outros: document.getElementById('obra_outros'),
+                local: document.getElementById('local'),
+                inspecionado_por: document.getElementById('inspecionado_por'),
+                executado_por: document.getElementById('executado_por'),
+                data_inspecao: document.getElementById('data_inspecao'),
+                compliant_count: document.getElementById('compliant-count'),
+                non_compliant_count: document.getElementById('non-compliant-count'),
+                final_score: document.getElementById('final-score'),
+            };
+
+            function calculateAndDisplayScore() {
+                const totalItems = checklistItems.length;
+                if (totalItems === 0) return;
+
+                const compliantCount = checklistItems.filter(item => item.status === 'A' || item.status === 'AR').length;
+                const nonCompliantCount = checklistItems.filter(item => item.status === 'NA').length;
+                const score = (compliantCount / totalItems) * 100;
+
+                formElements.compliant_count.textContent = compliantCount;
+                formElements.non_compliant_count.textContent = nonCompliantCount;
+                formElements.final_score.textContent = `${score.toFixed(0)}%`;
+            }
+
+            function toggleOutrosField() {
+                const outrosContainer = document.getElementById('outros_obra_container');
+                if (formElements.obra.value === 'OUTROS') {
+                    outrosContainer.classList.remove('hidden');
+                } else {
+                    outrosContainer.classList.add('hidden');
+                    formElements.obra_outros.value = '';
+                }
+            }
+
+            function saveProgress() {
+                const dataToSave = {
+                    formData: {
+                        obra: formElements.obra.value,
+                        obra_outros: formElements.obra_outros.value,
+                        local: formElements.local.value,
+                        inspecionado_por: formElements.inspecionado_por.value,
+                        executado_por: formElements.executado_por.value,
+                        data_inspecao: formElements.data_inspecao.value,
+                    },
+                    items: checklistItems
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+            }
+
+            function loadProgress() {
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                if (savedData) {
+                    const parsedData = JSON.parse(savedData);
+                    checklistItems = parsedData.items;
+                    Object.keys(parsedData.formData).forEach(key => {
+                        if (parsedData.formData[key] && formElements[key] && formElements[key].type !== 'button' && formElements[key].type !== 'submit') {
+                           formElements[key].value = parsedData.formData[key];
+                        }
+                    });
+                } else {
+                    checklistItems = initialItems.map(item => ({ ...item, status: 'P', observation: '', photo: null }));
+                    formElements.data_inspecao.value = new Date().toISOString().split('T')[0];
+                }
+                toggleOutrosField();
+                renderItems();
+                calculateAndDisplayScore();
+            }
+            
+            function clearForm() {
+                if(confirm('Você tem certeza que deseja limpar todos os dados do formulário? Esta ação não pode ser desfeita.')) {
+                    localStorage.removeItem(STORAGE_KEY);
+                    checklistItems = [];
+                    formElements.obra.value = 'MOOV';
+                    formElements.obra_outros.value = '';
+                    formElements.local.value = '';
+                    formElements.inspecionado_por.value = '';
+                    formElements.executado_por.value = '';
+                    loadProgress();
+                }
+            }
+            
+            document.getElementById('clear-form-btn').addEventListener('click', clearForm);
+            formElements.obra.addEventListener('change', () => {
+                toggleOutrosField();
+                saveProgress();
+            });
+
+            function renderItems() {
+                container.innerHTML = '';
+                checklistItems.forEach(itemData => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'checklist-grid-row p-3 border-t border-gray-700 items-start md:items-center';
+                    itemElement.innerHTML = `
+                        <div data-label="#" class="text-center font-medium text-lg text-gray-300 self-center">${itemData.id}</div>
+                        <div data-label="Item de Inspeção" class="text-sm text-gray-200 self-center">${itemData.item}</div>
+                        <div data-label="Método de Verificação" class="text-xs text-gray-400 self-center">${itemData.method}</div>
+                        <div data-label="Avaliação" class="flex flex-col gap-3">
+                            <div class="flex flex-wrap justify-start items-center gap-1 status-btn-group" data-id="${itemData.id}">
+                                <button title="Aprovado" data-status="A" class="status-btn ${itemData.status === 'A' ? 'active' : ''} bg-green-600 hover:bg-green-500 text-white font-bold p-2 rounded-full text-xs w-10 h-10 transition-all">A</button>
+                                <button title="Não Aprovado" data-status="NA" class="status-btn ${itemData.status === 'NA' ? 'active' : ''} bg-red-600 hover:bg-red-500 text-white font-bold p-2 rounded-full text-xs w-10 h-10 transition-all">NA</button>
+                                <button title="Aprovado Após Reinspeção" data-status="AR" class="status-btn ${itemData.status === 'AR' ? 'active' : ''} bg-blue-500 hover:bg-blue-400 text-white font-bold p-2 rounded-full text-xs w-10 h-10 transition-all">AR</button>
+                            </div>
+                             <textarea data-id="${itemData.id}" class="observation-text w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Observações...">${itemData.observation || ''}</textarea>
+                            <div class="photo-container mt-2" data-id="${itemData.id}">
+                                <label class="cursor-pointer bg-gray-600 hover:bg-gray-500 text-white text-sm py-2 px-4 rounded-md">
+                                    Anexar Foto
+                                    <input type="file" class="photo-upload-input" accept="image/*" data-id="${itemData.id}">
+                                </label>
+                                ${itemData.photo ? `<img src="${itemData.photo}" class="photo-preview" alt="Foto da inspeção ${itemData.id}">` : ''}
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(itemElement);
+                });
+                attachEventListeners();
+            }
+            
+            function attachEventListeners() {
+                 document.querySelectorAll('.status-btn').forEach(btn => btn.addEventListener('click', handleStatusClick));
+                 document.querySelectorAll('.observation-text').forEach(area => area.addEventListener('input', handleObservationInput));
+                 document.querySelectorAll('.photo-upload-input').forEach(input => input.addEventListener('change', handlePhotoUpload));
+                 Object.values(formElements).forEach(el => {
+                    if(el.id.includes('count') || el.id.includes('score')) return;
+                    el.addEventListener('input', saveProgress)
+                 });
+            }
+
+            function handleStatusClick(e) {
+                const button = e.currentTarget;
+                const id = parseInt(button.parentElement.dataset.id);
+                const status = button.dataset.status;
+                const item = checklistItems.find(i => i.id === id);
+                item.status = status;
+                
+                const buttonsInGroup = button.parentElement.querySelectorAll('.status-btn');
+                buttonsInGroup.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                calculateAndDisplayScore();
+                saveProgress();
+            }
+
+            function handleObservationInput(e) {
+                const textarea = e.currentTarget;
+                const id = parseInt(textarea.dataset.id);
+                const item = checklistItems.find(i => i.id === id);
+                item.observation = textarea.value;
+                saveProgress();
+            }
+            
+            function handlePhotoUpload(e) {
+                const input = e.currentTarget;
+                const id = parseInt(input.dataset.id);
+                const file = input.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const photoData = event.target.result;
+                    const item = checklistItems.find(i => i.id === id);
+                    item.photo = photoData;
+
+                    const container = input.closest('.photo-container');
+                    let preview = container.querySelector('.photo-preview');
+                    if (!preview) {
+                        preview = document.createElement('img');
+                        preview.className = 'photo-preview';
+                        container.appendChild(preview);
+                    }
+                    preview.src = photoData;
+                    
+                    saveProgress();
+                };
+                reader.readAsDataURL(file);
+            }
+
+            const generatePdfBtn = document.getElementById('generate-pdf-btn');
+            const loaderContainer = document.getElementById('loader-container');
+            
+            generatePdfBtn.addEventListener('click', () => {
+                generatePdfBtn.style.display = 'none';
+                clearFormBtn.style.display = 'none';
+                loaderContainer.style.display = 'flex';
+                
+                const { jsPDF } = window.jspdf;
+                const pdfContent = document.getElementById('pdf-content');
+
+                html2canvas(pdfContent, {
+                    scale: 2,
+                    backgroundColor: '#1f2937',
+                    useCORS: true,
+                    windowWidth: document.documentElement.scrollWidth,
+                    windowHeight: document.documentElement.scrollHeight
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF({
+                        orientation: 'portrait',
+                        unit: 'mm',
+                        format: 'a4'
+                    });
+
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    const ratio = canvas.width / canvas.height;
+                    const imgWidth = pdfWidth;
+                    const imgHeight = imgWidth / ratio;
+                    
+                    let heightLeft = imgHeight;
+                    let position = 0;
+
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pdfHeight;
+
+                    while (heightLeft > 0) {
+                        position -= pdfHeight;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pdfHeight;
+                    }
+                    
+                    let obra = formElements.obra.value;
+                    if (obra === 'OUTROS') {
+                       obra = formElements.obra_outros.value.replace(/ /g, '_') || 'Outros';
+                    }
+                    const today = new Date().toISOString().split('T')[0];
+                    pdf.save(`FVS_Piso_Vinilico_${obra}_${today}.pdf`);
+                    
+                    generatePdfBtn.style.display = 'inline-block';
+                    clearFormBtn.style.display = 'inline-block';
+                    loaderContainer.style.display = 'none';
+                });
+            });
+            const clearFormBtn = document.getElementById('clear-form-btn');
+            
+            loadProgress();
+        });
+    </script>
+</body>
+</html>
