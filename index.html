@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ficha de Verificação de Serviço - Piso Vinílico</title>
+    <title>Central de Fichas de Verificação de Serviço (FVS)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -49,6 +49,13 @@
             grid-template-columns: 40px 1fr 1.5fr 1fr;
             gap: 1rem;
         }
+        .fvs-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .fvs-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
          @media (max-width: 768px) {
             .checklist-grid-header {
                 display: none;
@@ -70,136 +77,749 @@
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white">
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
 
-    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+    <!-- Tela de Identificação -->
+    <div id="login-screen" class="max-w-md w-full mx-auto p-8 bg-gray-800 rounded-lg shadow-lg">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-white">Identificação</h1>
+             <div class="mt-4 text-gray-400 space-y-1">
+                <p class="text-sm font-semibold">SISTEMA DE GESTÃO DA QUALIDADE</p>
+                <p class="text-xs">POLO CONSTRUÇÃO E INCORPORAÇÃO LTDA.</p>
+                <p class="text-xs font-bold">ISO9001 e PBQP-h</p>
+            </div>
+        </header>
+        <div class="space-y-6">
+             <p class="text-center text-gray-400 text-sm">Informe seus dados para continuar.</p>
+            <div>
+                <label for="login_inspector" class="block text-sm font-medium text-gray-300 mb-2">Seu Nome (Inspetor):</label>
+                <input type="text" id="login_inspector" placeholder="Digite seu nome completo" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label for="login_obra" class="block text-sm font-medium text-gray-300 mb-2">Obra / Projeto:</label>
+                <select id="login_obra" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option>MOOV</option>
+                    <option>BELA TERRA</option>
+                    <option>GRAN LIFE</option>
+                    <option>CONNECT</option>
+                    <option>NEXT II</option>
+                    <option>OUTROS</option>
+                </select>
+                <div id="login_outros_obra_container" class="mt-4 hidden">
+                   <label for="login_obra_outros" class="block text-sm font-medium text-gray-300 mb-2">Especifique a Obra (Outros):</label>
+                   <input type="text" id="login_obra_outros" placeholder="Nome da obra" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+               </div>
+            </div>
+            <button id="login-continue-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                Continuar
+            </button>
+        </div>
+    </div>
+
+
+    <!-- Tela de Seleção de FVS -->
+    <div id="selection-screen" class="hidden max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-white">Central de FVS</h1>
+            <p class="text-lg text-gray-400 mt-2">Selecione a Ficha de Verificação de Serviço que deseja preencher.</p>
+        </header>
+        <div id="fvs-options-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Cards de FVS serão inseridos aqui -->
+        </div>
+    </div>
+
+    <!-- Container do formulário especial FVS 016.02 -->
+    <div id="fvs-16-02-container" class="hidden">
+         <div id="app-16-02" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+            <div id="pdf-content-16-02" class="bg-gray-800 p-8 rounded-lg">
+                <header class="text-center mb-8 border-b border-gray-600 pb-4">
+                    <h1 class="text-3xl font-bold text-white">Ficha de Verificação de Serviço (FVS)</h1>
+                    <p class="text-xl font-semibold text-blue-400 mt-2">FVS 016.02: Rastreabilidade Impermeabilização</p>
+                </header>
+                <main>
+                    <!-- Campos de identificação preenchidos automaticamente -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Obra / Projeto:</label>
+                            <input type="text" id="fvs1602_obra" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white" disabled>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Inspecionado por:</label>
+                            <input type="text" id="fvs1602_inspector" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white" disabled>
+                        </div>
+                    </div>
+
+                    <!-- Campos específicos da FVS 16.02 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                        <div>
+                            <label for="fvs1602_local" class="block text-sm font-medium text-gray-300 mb-2">Local do Teste:</label>
+                            <input type="text" id="fvs1602_local" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white">
+                        </div>
+                        <div>
+                            <label for="fvs1602_empresa" class="block text-sm font-medium text-gray-300 mb-2">Empresa Aplicadora:</label>
+                            <input type="text" id="fvs1602_empresa" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white">
+                        </div>
+                        <div>
+                            <label for="fvs1602_tipo_imper" class="block text-sm font-medium text-gray-300 mb-2">Tipo de Impermeabilização:</label>
+                            <input type="text" id="fvs1602_tipo_imper" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white">
+                        </div>
+                        <div>
+                            <label for="fvs1602_produtos" class="block text-sm font-medium text-gray-300 mb-2">Produtos Utilizados (Lote):</label>
+                            <input type="text" id="fvs1602_produtos" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white">
+                        </div>
+                    </div>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div>
+                            <label for="fvs1602_inicio" class="block text-sm font-medium text-gray-300 mb-2">Data e Hora de Início:</label>
+                            <input type="datetime-local" id="fvs1602_inicio" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white" style="color-scheme: dark;">
+                        </div>
+                        <div>
+                            <label for="fvs1602_fim" class="block text-sm font-medium text-gray-300 mb-2">Data e Hora de Fim:</label>
+                            <input type="datetime-local" id="fvs1602_fim" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white" style="color-scheme: dark;">
+                        </div>
+                    </div>
+                    
+                    <!-- Checklist -->
+                    <h3 class="text-xl font-semibold mb-4 text-white">Checklist do Teste</h3>
+                    <div id="checklist-container-16-02">
+                        <!-- Itens do checklist 16.02 serão inseridos aqui -->
+                    </div>
+
+                    <!-- Foto e Observações -->
+                     <div class="mt-8 pt-6 border-t border-gray-600">
+                        <h3 class="text-xl font-semibold mb-4 text-white">Registro Adicional</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h4 class="text-lg font-medium text-gray-200 mb-2">Evidência Fotográfica</h4>
+                                <div id="photo-container-16-02">
+                                    <label class="cursor-pointer bg-gray-600 hover:bg-gray-500 text-white text-sm py-2 px-4 rounded-md">
+                                        Anexar Foto do Teste
+                                        <input type="file" class="photo-upload-input" id="fvs1602_photo_input" accept="image/*">
+                                    </label>
+                                    <img id="fvs1602_photo_preview" class="photo-preview hidden mt-4" alt="Foto do teste de estanqueidade">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="fvs1602_observation" class="block text-lg font-medium text-gray-200 mb-2">Observações Gerais:</label>
+                                <textarea id="fvs1602_observation" rows="5" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white" placeholder="Descreva qualquer observação, anomalia ou resultado do teste..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+            <div class="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+                 <button id="back-to-selection-btn-16-02" class="w-full sm:w-auto bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg">Voltar ao Menu</button>
+                 <button id="generate-pdf-btn-16-02" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg">Gerar e Baixar PDF</button>
+                 <button id="clear-form-btn-16-02" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg">Limpar</button>
+            </div>
+             <div id="loader-container-16-02" class="mt-4 flex justify-center" style="display: none;">
+                <div class="loader"></div>
+                <p class="ml-4 self-center">Gerando PDF, por favor aguarde...</p>
+            </div>
+         </div>
+    </div>
+
+    <!-- Container Principal do Aplicativo Padrão (inicialmente oculto) -->
+    <div id="app-container" class="hidden">
+        <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+            <div id="pdf-content" class="bg-gray-800 p-8 rounded-lg">
+                <header class="text-center mb-8 border-b border-gray-600 pb-4">
+                    <h1 id="fvs-title" class="text-3xl font-bold text-white"></h1>
+                    <p id="fvs-subtitle" class="text-xl font-semibold text-blue-400 mt-2"></p>
+                </header>
         
-        <div id="pdf-content" class="bg-gray-800 p-8 rounded-lg">
-            <header class="text-center mb-8 border-b border-gray-600 pb-4">
-                <h1 class="text-3xl font-bold text-white">Ficha de Verificação de Serviço (FVS)</h1>
-                <p class="text-xl font-semibold text-blue-400 mt-2">FVS 013: REVESTIMENTO PISO VINÍLICO</p>
-            </header>
+                <main>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div>
+                            <label for="obra" class="block text-sm font-medium text-gray-300 mb-2">Obra / Projeto:</label>
+                            <select id="obra" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
+                                <option>MOOV</option>
+                                <option>BELA TERRA</option>
+                                <option>GRAN LIFE</option>
+                                <option>CONNECT</option>
+                                <option>NEXT II</option>
+                                <option>OUTROS</option>
+                            </select>
+                             <div id="outros_obra_container" class="mt-4 hidden">
+                                <label for="obra_outros" class="block text-sm font-medium text-gray-300 mb-2">Especifique a Obra (Outros):</label>
+                                <input type="text" id="obra_outros" placeholder="Nome da obra" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="local" class="block text-sm font-medium text-gray-300 mb-2">Local da Inspeção:</label>
+                            <input type="text" id="local" placeholder="Ex: Torre A, Apto 101" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
     
-            <main>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <div>
-                        <label for="obra" class="block text-sm font-medium text-gray-300 mb-2">Obra / Projeto:</label>
-                        <select id="obra" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option>MOOV</option>
-                            <option>BELA TERRA</option>
-                            <option>GRAN LIFE</option>
-                            <option>CONNECT</option>
-                            <option>NEXT II</option>
-                            <option>OUTROS</option>
-                        </select>
-                         <div id="outros_obra_container" class="mt-4 hidden">
-                            <label for="obra_outros" class="block text-sm font-medium text-gray-300 mb-2">Especifique a Obra (Outros):</label>
-                            <input type="text" id="obra_outros" placeholder="Nome da obra" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="overflow-x-auto">
+                        <div class="min-w-full">
+                            <div class="checklist-grid-header bg-gray-700 p-3 rounded-t-lg font-semibold text-sm text-gray-300">
+                                <div class="text-center">#</div>
+                                <div>Item de Inspeção</div>
+                                <div>Método de Verificação</div>
+                                <div class="text-center">Avaliação</div>
+                            </div>
+                            <div id="checklist-container" class="bg-gray-800 rounded-b-lg">
+                            </div>
                         </div>
                     </div>
-                    <div>
-                        <label for="local" class="block text-sm font-medium text-gray-300 mb-2">Local da Inspeção:</label>
-                        <input type="text" id="local" placeholder="Ex: Torre A, Apto 101" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <div class="min-w-full">
-                        <div class="checklist-grid-header bg-gray-700 p-3 rounded-t-lg font-semibold text-sm text-gray-300">
-                            <div class="text-center">#</div>
-                            <div>Item de Inspeção</div>
-                            <div>Método de Verificação</div>
-                            <div class="text-center">Avaliação</div>
-                        </div>
-                        <div id="checklist-container" class="bg-gray-800 rounded-b-lg">
-                            <!-- Itens serão injetados aqui -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Seção da Nota Final -->
-                <div id="score-section" class="mt-8 pt-6 border-t border-gray-600">
-                    <h3 class="text-xl font-semibold mb-4 text-white">Resultado Final da Inspeção</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                        <div class="bg-gray-700 p-4 rounded-lg">
-                            <p class="text-sm text-gray-400">Conformidades (A + AR)</p>
-                            <p id="compliant-count" class="text-2xl font-bold text-green-400">0</p>
-                        </div>
-                        <div class="bg-gray-700 p-4 rounded-lg">
-                            <p class="text-sm text-gray-400">Não Conformidades (NA)</p>
-                            <p id="non-compliant-count" class="text-2xl font-bold text-red-400">0</p>
-                        </div>
-                        <div class="bg-gray-700 p-4 rounded-lg">
-                            <p class="text-sm text-gray-400">Nota Final</p>
-                            <p id="final-score" class="text-2xl font-bold text-blue-400">0%</p>
+    
+                    <div id="score-section" class="mt-8 pt-6 border-t border-gray-600">
+                        <h3 class="text-xl font-semibold mb-4 text-white">Resultado Final da Inspeção</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                            <div class="bg-gray-700 p-4 rounded-lg">
+                                <p class="text-sm text-gray-400">Conformidades (A + AR)</p>
+                                <p id="compliant-count" class="text-2xl font-bold text-green-400">0</p>
+                            </div>
+                            <div class="bg-gray-700 p-4 rounded-lg">
+                                <p class="text-sm text-gray-400">Não Conformidades (NA)</p>
+                                <p id="non-compliant-count" class="text-2xl font-bold text-red-400">0</p>
+                            </div>
+                            <div class="bg-gray-700 p-4 rounded-lg">
+                                <p class="text-sm text-gray-400">Nota Final</p>
+                                <p id="final-score" class="text-2xl font-bold text-blue-400">0%</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="mt-8 pt-6 border-t border-gray-600">
-                     <h3 class="text-xl font-semibold mb-4 text-white">Informações Adicionais</h3>
-                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <label for="inspecionado_por" class="block text-sm font-medium text-gray-300 mb-2">Inspecionado por:</label>
-                            <input type="text" id="inspecionado_por" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label for="executado_por" class="block text-sm font-medium text-gray-300 mb-2">Executado por:</label>
-                            <input type="text" id="executado_por" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                           <label for="data_inspecao" class="block text-sm font-medium text-gray-300 mb-2">Data da Inspeção:</label>
-                           <input type="date" id="data_inspecao" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white" style="color-scheme: dark;">
+    
+                    <div class="mt-8 pt-6 border-t border-gray-600">
+                         <h3 class="text-xl font-semibold mb-4 text-white">Informações Adicionais</h3>
+                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label for="inspecionado_por" class="block text-sm font-medium text-gray-300 mb-2">Inspecionado por:</label>
+                                <input type="text" id="inspecionado_por" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
+                            </div>
+                            <div>
+                                <label for="executado_por" class="block text-sm font-medium text-gray-300 mb-2">Executado por:</label>
+                                <input type="text" id="executado_por" placeholder="Nome do executor" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                               <label for="data_inspecao" class="block text-sm font-medium text-gray-300 mb-2">Data da Inspeção:</label>
+                               <input type="date" id="data_inspecao" class="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white" style="color-scheme: dark;">
+                            </div>
                         </div>
                     </div>
-                </div>
-            </main>
-        </div>
-
-        <div class="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
-            <button id="generate-pdf-btn" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-500">
-                Gerar e Baixar PDF
-            </button>
-             <button id="clear-form-btn" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-red-500">
-                Limpar Formulário
-            </button>
-        </div>
-        <div id="loader-container" class="mt-4 flex justify-center" style="display: none;">
-            <div class="loader"></div>
-            <p class="ml-4 self-center">Gerando PDF, por favor aguarde...</p>
+                </main>
+            </div>
+    
+            <div class="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+                <button id="back-to-selection-btn" class="w-full sm:w-auto bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                    Voltar ao Menu
+                </button>
+                <button id="generate-pdf-btn" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                    Gerar e Baixar PDF
+                </button>
+                 <button id="clear-form-btn" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                    Limpar Formulário
+                </button>
+            </div>
+            <div id="loader-container" class="mt-4 flex justify-center" style="display: none;">
+                <div class="loader"></div>
+                <p class="ml-4 self-center">Gerando PDF, por favor aguarde...</p>
+            </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const STORAGE_KEY = 'fvsPisoVinilicoData_v4'; // Changed key for score feature
-            let checklistItems = [];
-
-            const initialItems = [
-                 { id: 1, item: "Limpeza e organização do local", method: "O local está limpo e livre de obstruções?" },
-                { id: 2, item: "Verificação de lote de produção", method: "Conferir se os lotes nas embalagens são os mesmos para garantir uniformidade." },
-                { id: 3, item: "Armazenamento", method: "Produto em local fechado, coberto, ventilado (15-27°C), caixas na horizontal (máx. 11)." },
-                { id: 4, item: "Contrapiso", method: "Base deve estar livre, limpa, seca, curada, impermeabilizada, nivelada e firme." },
-                { id: 5, item: "Bases Permitidas", method: "Cimentado, Cerâmica/porcelanato, Mármores e Granitos, Mezanino, Piso aquecido." },
-                { id: 6, item: "Contrapiso seco e curado", method: "Teste do plástico (50x50cm) por 24h. Não pode haver umidade." },
-                { id: 7, item: "Absorção", method: "Contrapisos porosos (absorvem gota d'água < 1 min) devem receber prime." },
-                { id: 8, item: "Firmeza", method: "Base sem partes soltas. Resistência à compressão > 15MPa." },
-                { id: 9, item: "Adesivo", method: "Cola mantida em temperatura ambiente (15-27°C) 24h antes e durante." },
-                { id: 10, item: "Aclimatação do vinílico", method: "Peças fora da caixa, empilhadas de forma plana por 24h (15-27°C)." },
-                { id: 11, item: "Produtos de mesmo lote", method: "Confirmar se todas as caixas para o mesmo cômodo são do mesmo lote." },
-                { id: 12, item: "Tamanho mínimo das peças", method: "Peças devem ter no mínimo 20cm de comprimento e 5cm de largura." },
-                { id: 13, item: "Autonivelante", method: "Uso de massa de preparação ou autonivelante para corrigir irregularidades." },
-                { id: 14, item: "Marcação do eixo", method: "Marcar o eixo de início da instalação conforme definido em croqui." },
-                { id: 15, item: "Conferência das cotas de nível", method: "As cotas de nível foram conferidas conforme projeto?" },
-                { id: 16, item: "Aplicação do adesivo", method: "O ambiente de instalação deve estar ventilado." },
-                { id: 17, item: "Execução da aplicação", method: "Aplicar adesivo conforme orientações do fabricante (espátula, tempo, etc.)." },
-                { id: 18, item: "Remoção do resíduo", method: "O resíduo de cola foi removido após a instalação?" },
+            
+            const genericPlaceholderItems = [
+                { id: 1, item: "Verificação de projeto", method: "A versão do projeto utilizado é a mais recente?" },
+                { id: 2, item: "Limpeza da área", method: "O local de trabalho está limpo e organizado?" },
+                { id: 3, item: "Qualidade dos materiais", method: "Os materiais a serem utilizados estão de acordo com o especificado e em bom estado?" },
+                { id: 4, item: "Execução", method: "O serviço está sendo executado conforme as boas práticas e normas técnicas?" },
+                { id: 5, item: "Segurança", method: "Os EPIs necessários estão sendo utilizados pela equipe?" },
             ];
 
-            const container = document.getElementById('checklist-container');
+            // --- BANCO DE DADOS DAS FVS ---
+            const fvsDatabase = {
+                'compactacao_aterro': {
+                    subtitle: "FVS 001: COMPACTAÇÃO E ATERRO",
+                    items: [
+                        { id: 1, item: "As camadas estão sendo espalhadas em camadas com espessura de no máximo 20 cm de material solto?", method: "Visual" },
+                        { id: 2, item: "A umidade da camada está sendo verificada e corrigida antes da compactação?", method: "Visual" },
+                        { id: 3, item: "O número de passadas do rolo está sendo obedecido conforme definido?", method: "Visual" },
+                        { id: 4, item: "As bordas do aterro estão sendo compactadas?", method: "Visual" },
+                        { id: 5, item: "Foi realizado ensaio para verificar o grau de compactação?", method: "Verificar relatório" },
+                        { id: 6, item: "A camada de coroamento está sendo executada com material de melhor qualidade (sem pedregulhos e argila)?", method: "Visual" },
+                        { id: 7, item: "A declividade superficial está sendo executada para não empossar água?", method: "Visual" }
+                    ]
+                },
+                'locacao_obra': {
+                    subtitle: "FVS 002: LOCAÇÃO DA OBRA",
+                    items: [
+                        { id: 1, item: "Limpeza do terreno", method: "O local deve estar limpo e sem interferências" },
+                        { id: 2, item: "Conferência do Nível de Referência", method: "A N.R (nível de referência) da obra está materializada em local seguro e está sendo usada como referência para a execução do gabarito?" },
+                        { id: 3, item: "Conferência dos eixos", method: "Os eixos locados estão de acordo com o projeto de locação?" },
+                        { id: 4, item: "Conferência de nível do gabarito", method: "O gabarito está nivelado em todo seu perímetro?" },
+                        { id: 5, item: "Conferência do esquadro", method: "O esquadro foi conferido?" },
+                        { id: 6, item: "Contraventamento do gabarito", method: "O gabarito está contraventado para garantir sua rigidez e evitar deslocamentos?" },
+                        { id: 7, item: "Identificação dos eixos", method: "Os eixos estão identificados no gabarito?" }
+                    ]
+                },
+                'estaca_raiz': {
+                    subtitle: "FVS 003.01: ESTACA RAIZ",
+                    items: [
+                        { id: 1, item: "Locação da Estaca", method: "As estacas estão locadas corretamente?" },
+                        { id: 2, item: "Perfuração", method: "A perfuração está atingindo a profundidade e o diâmetro definidos em projeto?" },
+                        { id: 3, item: "Preenchimento", method: "A argamassa está sendo injetada de baixo para cima, de forma contínua?" },
+                        { id: 4, item: "Colocação da Armadura", method: "A armadura está sendo inserida na estaca logo após a injeção da argamassa?" },
+                        { id: 5, item: "Arrasamento das Estacas", method: "O arrasamento (corte do topo) da estaca foi feito na cota correta e o topo está são?" }
+                    ]
+                },
+                'estaca_pre_moldada': {
+                    subtitle: "FVS 003.02: ESTACA PRÉ MOLDADA",
+                    items: [
+                        { id: 1, item: "Locação da Estaca", method: "As estacas estão locadas corretamente?" },
+                        { id: 2, item: "Cravação", method: "A cravação está sendo controlada (nega e repique) e atingiu a profundidade prevista?" },
+                        { id: 3, item: "Preenchimento", method: "As emendas entre os segmentos de estaca estão sendo bem executadas?" },
+                        { id: 4, item: "Corte das Estacas", method: "O corte do topo da estaca foi feito na cota correta e o topo está são?" }
+                    ]
+                },
+                'estaca_helice_continua': {
+                    subtitle: "FVS 003.03: ESTACA HÉLICE CONTÍNUA",
+                    items: [
+                        { id: 1, item: "Locação da Estaca", method: "As estacas estão locadas corretamente?" },
+                        { id: 2, item: "Perfuração", method: "A perfuração atingiu a profundidade de projeto?" },
+                        { id: 3, item: "Concretagem", method: "A concretagem está sendo realizada simultaneamente à retirada do trado, preenchendo todo o fuste?" },
+                        { id: 4, item: "Colocação da Armadura", method: "A armadura está sendo inserida por gravidade (ou com auxílio de vibrador) no concreto fresco?" },
+                        { id: 5, item: "Corte do Excesso de Concreto", method: "O excesso de concreto foi removido e o topo da estaca foi nivelado na cota correta?" }
+                    ]
+                },
+                'radier': {
+                    subtitle: "FVS 003.04: RADIER",
+                    items: [
+                        { id: 1, item: "Locação", method: "A locação do radier está conforme o projeto?" },
+                        { id: 2, item: "Escavação", method: "A escavação e o nivelamento do fundo da vala estão na cota correta?" },
+                        { id: 3, item: "Lastro de brita", method: "A camada de lastro de brita foi espalhada e compactada?" },
+                        { id: 4, item: "Lona Plástica", method: "A lona plástica foi colocada sobre a brita para impermeabilização?" },
+                        { id: 5, item: "Armadura", method: "A armadura (malha de aço) foi posicionada com os espaçadores garantindo o cobrimento?" },
+                        { id: 6, item: "Instalações Embutidas", method: "As tubulações hidráulicas e elétricas foram posicionadas e fixadas?" },
+                        { id: 7, item: "Nível de concretagem", method: "Foram colocadas mestras para guiar o nível de acabamento do concreto?" }
+                    ]
+                },
+                'tubulao': {
+                    subtitle: "FVS 003.05: TUBULÃO",
+                    items: [
+                        { id: 1, item: "A escavação do fuste está com o diâmetro e profundidade de projeto?", method: "Visual" },
+                        { id: 2, item: "O alargamento da base está com as dimensões de projeto?", method: "Visual" },
+                        { id: 3, item: "A limpeza do fundo da base foi realizada?", method: "Visual" },
+                        { id: 4, item: "A cota de apoio do tubulão foi conferida pelo engenheiro?", method: "Visual e Documental" },
+                        { id: 5, item: "A armadura está locada e posicionada corretamente?", method: "Visual" },
+                        { id: 6, item: "O concreto está sendo lançado de forma que não ocorra segregação?", method: "Visual" },
+                        { id: 7, item: "O topo do tubulão foi arrasado na cota correta?", method: "Visual" }
+                    ]
+                },
+                'broca': {
+                    subtitle: "FVS 003.06: BROCA",
+                    items: [
+                        { id: 1, item: "As brocas estão locadas corretamente?", method: "Visual" },
+                        { id: 2, item: "A perfuração está atingindo a profundidade e o diâmetro definidos em projeto?", method: "Visual" },
+                        { id: 3, item: "A armadura está locada e posicionada corretamente, garantindo o cobrimento?", method: "Visual" },
+                        { id: 4, item: "O concreto está sendo lançado de forma que não ocorra segregação?", method: "Visual" },
+                        { id: 5, item: "O topo da broca foi arrasado na cota correta?", method: "Visual" }
+                    ]
+                },
+                'forma_desforma': {
+                    subtitle: "FVS 004: FORMA E DESFORMA",
+                    items: [
+                        { id: 1, item: "As fôrmas estão limpas e foi aplicado desmoldante?", method: "Visual" },
+                        { id: 2, item: "As dimensões dos elementos estruturais estão de acordo com o projeto?", method: "Trena" },
+                        { id: 3, item: "O alinhamento das fôrmas está correto?", method: "Linha" },
+                        { id: 4, item: "O prumo das fôrmas está correto?", method: "Prumo de face" },
+                        { id: 5, item: "O nível das fôrmas está correto?", method: "Nível a laser / Mangueira de nível" },
+                        { id: 6, item: "O escoramento está firme e contraventado?", method: "Visual" },
+                        { id: 7, item: "A vedação das juntas das fôrmas está adequada para evitar fuga de nata?", method: "Visual" },
+                        { id: 8, item: "As instalações embutidas estão locadas e fixadas corretamente?", method: "Visual / Trena" },
+                        { id: 9, item: "A desforma foi realizada após o tempo mínimo de cura do concreto?", method: "Documental" }
+                    ]
+                },
+                'armacao': {
+                    subtitle: "FVS 005: ARMAÇÃO",
+                    items: [
+                        { id: 1, item: "As barras de aço estão limpas (sem ferrugem excessiva, óleo, graxa)?", method: "Visual" },
+                        { id: 2, item: "As bitolas e espaçamentos das barras estão de acordo com o projeto?", method: "Trena / Paquímetro" },
+                        { id: 3, item: "As dobras e ganchos foram executados conforme projeto?", method: "Visual" },
+                        { id: 4, item: "A amarração com arame recozido está firme?", method: "Visual" },
+                        { id: 5, item: "Os espaçadores foram colocados para garantir o cobrimento?", method: "Visual / Trena" },
+                        { id: 6, item: "O posicionamento da armadura dentro das fôrmas está correto?", method: "Visual / Trena" },
+                        { id: 7, item: "As emendas por transpasse têm o comprimento correto?", method: "Trena" }
+                    ]
+                },
+                'concretagem': {
+                    subtitle: "FVS 006: CONCRETAGEM",
+                    items: [
+                        { id: 1, item: "A nota fiscal do concreto foi conferida (traço, slump, volume)?", method: "Documental" },
+                        { id: 2, item: "O slump test foi realizado na chegada do caminhão e o resultado foi satisfatório?", method: "Ensaio" },
+                        { id: 3, item: "Foram moldados corpos de prova para ensaio de resistência?", method: "Ensaio" },
+                        { id: 4, item: "As fôrmas e armaduras foram limpas e molhadas antes da concretagem?", method: "Visual" },
+                        { id: 5, item: "O lançamento do concreto está sendo feito de altura adequada?", method: "Visual" },
+                        { id: 6, item: "O adensamento com vibrador está sendo executado corretamente?", method: "Visual" },
+                        { id: 7, item: "O acabamento da superfície está de acordo com o especificado?", method: "Visual" },
+                        { id: 8, item: "A cura do concreto foi iniciada no tempo correto?", method: "Visual" }
+                    ]
+                },
+                'alvenaria_estrutural': {
+                    subtitle: "FVS 007: ALVENARIA ESTRUTURAL",
+                    items: [
+                        { id: 1, item: "Os blocos são do tipo e resistência especificados em projeto?", method: "Visual / Documental" },
+                        { id: 2, item: "A marcação da primeira fiada está de acordo com o projeto?", method: "Trena / Linha" },
+                        { id: 3, item: "A primeira fiada está nivelada e no prumo?", method: "Nível / Prumo" },
+                        { id: 4, item: "As juntas de argamassa (horizontal e vertical) estão preenchidas e com espessura de 1 cm?", method: "Visual / Trena" },
+                        { id: 5, item: "A elevação das paredes está no prumo, nível e alinhamento?", method: "Prumo / Nível / Linha" },
+                        { id: 6, item: "As armaduras (barras de aço) e o graute estão sendo colocados nos pontos indicados pelo projeto?", method: "Visual" },
+                        { id: 7, item: "A amarração entre paredes está sendo executada corretamente?", method: "Visual" },
+                        { id: 8, item: "As vergas e contravergas estão instaladas corretamente nos vãos?", method: "Visual" },
+                        { id: 9, item: "As instalações elétricas/hidráulicas foram embutidas antes do grauteamento?", method: "Visual" }
+                    ]
+                },
+                 'alvenaria_vedacao': {
+                    subtitle: "FVS 008: ALVENARIA DE VEDAÇÃO",
+                    items: [
+                        { id: 1, item: "A base está limpa, isenta de pós, graxas ou óleos?", method: "Visual" },
+                        { id: 2, item: "Os blocos estão sendo umedecidos antes do assentamento?", method: "Visual" },
+                        { id: 3, item: "A primeira fiada foi assentada sobre camada de argamassa de regularização?", method: "Visual" },
+                        { id: 4, item: "As juntas de assentamento estão preenchidas e com espessura de 10 a 15 mm?", method: "Trena" },
+                        { id: 5, item: "As paredes estão no prumo, nível e alinhamento?", method: "Prumo, Nível e Linha" },
+                        { id: 6, item: "A amarração entre paredes está sendo executada?", method: "Visual" },
+                        { id: 7, item: "As vergas e contravergas estão sendo instaladas?", method: "Visual" },
+                        { id: 8, item: "O encunhamento está sendo executado?", method: "Visual" }
+                    ]
+                },
+                'revestimento_argamassa': {
+                    subtitle: "FVS 009: REVESTIMENTO DE ARGAMASSA",
+                    items: [
+                        { id: 1, item: "A base está limpa e umedecida?", method: "Visual" },
+                        { id: 2, item: "O chapisco foi aplicado em toda a superfície?", method: "Visual" },
+                        { id: 3, item: "As mestras foram executadas para guiar a espessura do reboco?", method: "Visual" },
+                        { id: 4, item: "A argamassa foi aplicada e sarrafeada?", method: "Visual" },
+                        { id: 5, item: "O acabamento (desempenado) está uniforme?", method: "Visual" },
+                        { id: 6, item: "O revestimento está no prumo e plano?", method: "Prumo e Régua" }
+                    ]
+                },
+                'revestimento_gesso_liso': {
+                    subtitle: "FVS 009.1: REVESTIMENTO GESSO LISO",
+                    items: [
+                        { id: 1, item: "A base está limpa e seca?", method: "Visual" },
+                        { id: 2, item: "Foi aplicado selador na base, se necessário?", method: "Visual" },
+                        { id: 3, item: "O gesso está sendo aplicado em camada uniforme?", method: "Visual" },
+                        { id: 4, item: "A superfície está lisa e sem ondulações?", method: "Visual" },
+                        { id: 5, item: "As arestas e cantos estão bem acabados?", method: "Visual" }
+                    ]
+                },
+                'revestimento_interno_area_umida': {
+                    subtitle: "FVS 010: REVESTIMENTO INTERNO ÁREA ÚMIDA",
+                    items: [
+                        { id: 1, item: "A base está limpa, seca e impermeabilizada?", method: "Visual" },
+                        { id: 2, item: "A argamassa colante é do tipo adequado (AC-III)?", method: "Documental" },
+                        { id: 3, item: "A dupla colagem está sendo executada para peças maiores que 30x30 cm?", method: "Visual" },
+                        { id: 4, item: "As juntas de assentamento estão uniformes?", method: "Visual / Trena" },
+                        { id: 5, item: "O rejuntamento foi aplicado com o tipo de rejunte correto (ex: epóxi)?", method: "Visual / Documental" },
+                        { id: 6, item: "O caimento do piso em direção ao ralo está correto?", method: "Nível" }
+                    ]
+                },
+                'revestimento_externo': {
+                    subtitle: "FVS 011: REVESTIMENTO EXTERNO",
+                    items: [
+                        { id: 1, item: "A base está limpa e regularizada?", method: "Visual" },
+                        { id: 2, item: "O chapisco foi aplicado para melhorar a aderência?", method: "Visual" },
+                        { id: 3, item: "As mestras foram executadas para garantir a espessura e o plano?", method: "Visual" },
+                        { id: 4, item: "As juntas de dilatação de projeto foram respeitadas?", method: "Visual / Trena" },
+                        { id: 5, item: "O acabamento está uniforme e sem fissuras?", method: "Visual" },
+                        { id: 6, item: "A cura do revestimento foi realizada adequadamente?", method: "Visual" }
+                    ]
+                },
+                'execucao_contrapiso': {
+                    subtitle: "FVS 012: EXECUÇÃO DE CONTRAPISO",
+                    items: [
+                        { id: 1, item: "A base está limpa e sem material solto?", method: "Visual" },
+                        { id: 2, item: "As mestras de nível foram executadas?", method: "Nível a laser / Mangueira de nível" },
+                        { id: 3, item: "A espessura do contrapiso está de acordo com o projeto?", method: "Trena" },
+                        { id: 4, item: "O caimento em áreas molhadas está correto?", method: "Nível" },
+                        { id: 5, item: "O acabamento superficial está plano e sem irregularidades (sarrafeado e desempenado)?", method: "Régua" },
+                        { id: 6, item: "As juntas de dilatação foram executadas conforme projeto?", method: "Visual" }
+                    ]
+                },
+                'revestimento_piso_ceramico': {
+                    subtitle: "FVS 013: REVESTIMENTO PISO CERÂMICO",
+                    items: [
+                        { id: 1, item: "A base está limpa, isenta de pós, graxas, etc.?", method: "Visual" },
+                        { id: 2, item: "A argamassa colante é adequada ao tipo de placa cerâmica e local de uso?", method: "Verificar embalagem" },
+                        { id: 3, item: "A paginação das placas foi definida previamente?", method: "Visual" },
+                        { id: 4, item: "A argamassa está sendo estendida em áreas pequenas para evitar secagem?", method: "Visual" },
+                        { id: 5, item: "A dupla camada está sendo utilizada para placas maiores que 30x30 cm?", method: "Visual" },
+                        { id: 6, item: "O nivelamento e o alinhamento das placas estão corretos?", method: "Régua e Nível" },
+                        { id: 7, item: "As juntas de assentamento estão uniformes e com a espessura correta?", method: "Visual" },
+                        { id: 8, item: "O rejuntamento foi iniciado após o tempo de cura da argamassa?", method: "Visual" }
+                    ]
+                },
+                'revestimento_piso_vinilico': {
+                    subtitle: "FVS 013.1: REVESTIMENTO PISO VINÍLICO",
+                    items: [
+                        { id: 1, item: "A base está limpa, seca, firme e nivelada?", method: "Visual e com régua" },
+                        { id: 2, item: "Foi utilizada massa niveladora para corrigir imperfeições da base?", method: "Visual" },
+                        { id: 3, item: "O lote das peças é o mesmo para todo o ambiente?", method: "Verificar embalagem" },
+                        { id: 4, item: "As peças foram aclimatadas no local por 24 horas?", method: "Visual" },
+                        { id: 5, item: "O adesivo (cola) aplicado é o especificado pelo fabricante?", method: "Verificar embalagem" },
+                        { id: 6, item: "O tempo de tack do adesivo foi respeitado antes do assentamento?", method: "Visual" },
+                        { id: 7, item: "As peças estão bem aderidas e sem bolhas de ar?", method: "Visual" },
+                        { id: 8, item: "Os recortes e arremates estão bem acabados?", method: "Visual" }
+                    ]
+                },
+                'revestimento_piso_externo_cimentado': {
+                    subtitle: "FVS 014: REVESTIMENTO PISO EXTERNO - CIMENTADO",
+                    items: [
+                        { id: 1, item: "A base (terreno) está compactada e nivelada?", method: "Visual" },
+                        { id: 2, item: "As mestras de nível e caimento foram executadas?", method: "Nível" },
+                        { id: 3, item: "As juntas de dilatação foram previstas e estão sendo executadas?", method: "Visual" },
+                        { id: 4, item: "O traço do concreto ou argamassa está conforme especificado?", method: "Documental" },
+                        { id: 5, item: "O acabamento superficial (desempenado, vassourado) está uniforme?", method: "Visual" },
+                        { id: 6, item: "A cura úmida está sendo realizada por no mínimo 7 dias?", method: "Visual" }
+                    ]
+                },
+                'execucao_forro': {
+                    subtitle: "FVS 015: EXECUÇÃO DE FORRO",
+                    items: [
+                        { id: 1, item: "A marcação de nível do forro está correta?", method: "Nível a laser / Mangueira de nível" },
+                        { id: 2, item: "A estrutura de sustentação (perfis, arames) está fixada e espaçada corretamente?", method: "Trena" },
+                        { id: 3, item: "As placas de gesso ou outro material estão bem fixadas na estrutura?", method: "Visual" },
+                        { id: 4, item: "O tratamento das juntas entre as placas foi realizado com fita e massa adequadas?", method: "Visual" },
+                        { id: 5, item: "O forro está nivelado e sem ondulações?", method: "Régua" },
+                        { id: 6, item: "Os recortes para luminárias e outras interferências estão bem acabados?", method: "Visual" }
+                    ]
+                },
+                'execucao_impermeabilizacao': {
+                    subtitle: "FVS 016: EXECUÇÃO DE IMPERMEABILIZAÇÃO",
+                    items: [
+                        { id: 1, item: "A superfície está limpa, seca e regularizada?", method: "Visual" },
+                        { id: 2, item: "O caimento para os ralos está adequado (mínimo 1%)?", method: "Nível" },
+                        { id: 3, item: "Foi aplicado primer para melhorar a aderência?", method: "Visual" },
+                        { id: 4, item: "O sistema impermeabilizante (manta, argamassa, etc.) é o especificado em projeto?", method: "Documental" },
+                        { id: 5, item: "A aplicação está sendo feita conforme recomendação do fabricante?", method: "Visual" },
+                        { id: 6, item: "Os arremates em ralos, cantos e tubulações estão reforçados?", method: "Visual" },
+                        { id: 7, item: "O teste de estanqueidade foi realizado por 72 horas?", method: "Visual e Documental" }
+                    ]
+                },
+                'rastreabilidade_impermeabilizacao': {
+                    subtitle: "FVS 016.02: RASTREABILIDADE IMPERMEABILIZAÇÃO",
+                    items: [
+                        { id: 1, item: "Toda a área impermeabilizada foi preenchida com uma lâmina d'água?", method: "Visual" },
+                        { id: 2, item: "A lâmina d'água foi mantida por no mínimo 72 horas?", method: "Documental (registro de data/hora)" },
+                        { id: 3, item: "Durante o teste, foram observados vazamentos ou umidade no andar inferior ou paredes adjacentes?", method: "Visual" },
+                        { id: 4, item: "O nível da água foi marcado no início e verificado no final para detectar perdas não visíveis?", method: "Visual / Marcação" },
+                        { id: 5, item: "O resultado do teste foi documentado e aprovado pelo responsável?", method: "Documental" }
+                    ],
+                    isSpecial: true
+                },
+                'estrutura_telhado': {
+                    subtitle: "FVS 017: ESTRUTURA DE TELHADO",
+                    items: [
+                        { id: 1, item: "A estrutura de madeira/metálica está com as dimensões e espaçamentos de projeto?", method: "Trena" },
+                        { id: 2, item: "O material utilizado está seco, sem defeitos e protegido (cupim, corrosão)?", method: "Visual" },
+                        { id: 3, item: "As emendas e encaixes estão bem executados e travados?", method: "Visual" },
+                        { id: 4, item: "O telhado tem o caimento especificado em projeto?", method: "Nível" },
+                        { id: 5, item: "A estrutura está firme e contraventada?", method: "Visual" }
+                    ]
+                },
+                'telhamento': {
+                    subtitle: "FVS 017.01: TELHAMENTO",
+                    items: [
+                        { id: 1, item: "As telhas são do tipo especificado e estão íntegras?", method: "Visual" },
+                        { id: 2, item: "A sobreposição (galga) entre as telhas está correta e uniforme?", method: "Trena" },
+                        { id: 3, item: "As telhas estão bem amarradas ou fixadas na estrutura?", method: "Visual" },
+                        { id: 4, item: "As cumeeiras, rufos e calhas foram instalados e vedados corretamente?", method: "Visual" },
+                        { id: 5, item: "O alinhamento das telhas está correto?", method: "Visual" }
+                    ]
+                },
+                'colocacao_porta_batente': {
+                    subtitle: "FVS 018: COLOCAÇÃO DE PORTA E BATENTE",
+                    items: [
+                        { id: 1, item: "O batente está instalado no prumo, nível e esquadro?", method: "Prumo, Nível, Esquadro" },
+                        { id: 2, item: "O batente está fixado com espuma expansiva ou parafusos?", method: "Visual" },
+                        { id: 3, item: "As folgas entre a porta e o batente estão uniformes?", method: "Trena" },
+                        { id: 4, item: "As dobradiças e fechaduras estão instaladas e funcionando corretamente?", method: "Visual" },
+                        { id: 5, item: "A porta abre e fecha sem emperrar?", method: "Visual" }
+                    ]
+                },
+                'colocacao_esquadria_metalica': {
+                    subtitle: "FVS 019: COLOCAÇÃO DE ESQUADRIA METÁLICA",
+                    items: [
+                        { id: 1, item: "O contramarco está instalado no prumo e nível?", method: "Prumo e Nível" },
+                        { id: 2, item: "A esquadria está fixada com parafusos e vedada com espuma?", method: "Visual" },
+                        { id: 3, item: "As folhas correm/abrem suavemente e os fechos funcionam?", method: "Visual" },
+                        { id: 4, item: "O alumínio e o vidro não apresentam riscos ou amassados?", method: "Visual" },
+                        { id: 5, item: "As borrachas de vedação (guarnições) estão bem encaixadas?", method: "Visual" }
+                    ]
+                },
+                'execucao_guarda_corpo': {
+                    subtitle: "FVS 020: EXECUÇÃO GUARDA CORPO",
+                    items: [
+                        { id: 1, item: "A altura final do guarda-corpo está de acordo com a norma (mín. 1,10m)?", method: "Trena" },
+                        { id: 2, item: "A fixação (chumbamento) dos montantes na laje está segura?", method: "Visual" },
+                        { id: 3, item: "Os vãos entre os elementos (travessas, vidros) são inferiores a 11 cm?", method: "Trena" },
+                        { id: 4, item: "O material e o acabamento estão de acordo com o projeto?", method: "Visual" },
+                        { id: 5, item: "O guarda-corpo está firme e não apresenta balanço excessivo?", method: "Teste de Esforço" }
+                    ]
+                },
+                'execucao_pintura_interna': {
+                    subtitle: "FVS 021: EXECUÇÃO DE PINTURA INTERNA",
+                    items: [
+                        { id: 1, item: "A superfície foi lixada, limpa e está livre de poeira?", method: "Visual" },
+                        { id: 2, item: "Foi aplicado selador ou fundo preparador?", method: "Visual" },
+                        { id: 3, item: "As imperfeições foram corrigidas com massa corrida?", method: "Visual" },
+                        { id: 4, item: "A pintura está uniforme, sem manchas, respingos ou escorrimentos?", method: "Visual" },
+                        { id: 5, item: "Os recortes estão bem-feitos?", method: "Visual" }
+                    ]
+                },
+                'execucao_pintura_externa': {
+                    subtitle: "FVS 022: EXECUÇÃO DE PINTURA EXTERNA",
+                    items: [
+                        { id: 1, item: "As superfícies estão limpas, secas e livres de mofo ou eflorescência?", method: "Visual" },
+                        { id: 2, item: "Foi aplicado selador acrílico ou fundo preparador?", method: "Visual" },
+                        { id: 3, item: "As fissuras e imperfeições foram tratadas com massa acrílica?", method: "Visual" },
+                        { id: 4, item: "A pintura está uniforme, com a cor especificada e sem manchas?", method: "Visual" },
+                        { id: 5, item: "As esquadrias e outros elementos foram protegidos de respingos?", method: "Visual" }
+                    ]
+                },
+                'instalacoes_eletricas': {
+                    subtitle: "FVS 023: INSTALAÇÕES ELÉTRICAS",
+                    items: [
+                        { id: 1, item: "Instalações embutidas em lajes", method: "Os eletrodutos, caixas de teto e seus respectivos travamentos estão de acordo com o projeto, limpos e vedados para evitar a entrada de nata de concreto?" },
+                        { id: 2, item: "Instalações embutidas em alvenarias", method: "As caixas e os eletrodutos estão locados, fixados e alinhados conforme o projeto?" },
+                        { id: 3, item: "Passagem dos condutores", method: "Os condutores (fios e cabos) estão identificados com anilhas e foram passados nos eletrodutos sem emendas?" },
+                        { id: 4, item: "Montagem do quadro de distribuição", method: "O quadro está instalado no prumo e nível? Os disjuntores e barramentos estão corretamente identificados e fixados?" },
+                        { id: 5, item: "Conexões e emendas", method: "As conexões e emendas estão firmes, isoladas com fita isolante de boa qualidade e alojadas em caixas de passagem?" },
+                        { id: 6, item: "Instalação dos acabamentos", method: "Os espelhos, tomadas e interruptores estão bem fixados, alinhados e sem danos?" },
+                        { id: 7, item: "Teste de funcionamento", method: "Todas as tomadas foram testadas? Todas as luminárias acendem? O quadro de disjuntores está operando corretamente?" }
+                    ]
+                },
+                'instalacoes_hidraulicas': {
+                    subtitle: "FVS 024: INSTALAÇÕES HIDRÁULICAS",
+                    items: [
+                        { id: 1, item: "Locação de pontos", method: "A locação dos pontos de água fria, água quente e esgoto está de acordo com o projeto?" },
+                        { id: 2, item: "Passagem por alvenaria", method: "Os rasgos na alvenaria para a passagem da tubulação estão de acordo com o especificado no manual do construtor?" },
+                        { id: 3, item: "Tubulação de esgoto", method: "Os tubos de esgoto estão com as declividades e fixações corretas?" },
+                        { id: 4, item: "Tubulação de água fria/quente", method: "As tubulações de água fria e quente estão fixadas e protegidas?" },
+                        { id: 5, item: "Teste de estanqueidade", method: "Foi realizado o teste de estanqueidade nas tubulações de esgoto e água fria/quente?" },
+                        { id: 6, item: "Registros", method: "Os registros estão instalados na posição e altura corretas?" }
+                    ]
+                },
+                'instalacoes_hidraulicas_laje': {
+                    subtitle: "FVS 024.1: INSTALAÇÕES HIDRÁULICAS (LAJE)",
+                    items: [
+                        { id: 1, item: "Locação dos pontos", method: "A locação dos pontos de esgoto (ralos, shafts) e água pluvial está de acordo com o projeto?" },
+                        { id: 2, item: "Fixação da tubulação", method: "As tubulações estão devidamente fixadas na forma da laje para não se moverem durante a concretagem?" },
+                        { id: 3, item: "Proteção da tubulação", method: "As extremidades das tubulações estão vedadas para evitar a entrada de concreto?" },
+                        { id: 4, item: "Interferências", method: "A posição da tubulação foi compatibilizada com a armadura da laje?" }
+                    ]
+                },
+                'instalacoes_ar_condicionado': {
+                    subtitle: "FVS 024.2: INSTALAÇÕES DE AR-CONDICIONADO INFRAESTRUTURA",
+                    items: [
+                        { id: 1, item: "Locação de pontos", method: "A locação dos pontos da condensadora e da evaporadora está de acordo com o projeto específico?" },
+                        { id: 2, item: "Isolamento térmico", method: "O isolamento dos tubos de cobre está sendo executado?" },
+                        { id: 3, item: "Dreno", method: "O diâmetro do tubo de dreno, e o caimento do mesmo está conforme especificação em projeto?" },
+                        { id: 4, item: "Tubulação de cobre", method: "Os tubos de cobre estão sendo instalados, vedados e protegidos para evitar amassamentos e contaminações?" },
+                        { id: 5, item: "Furos em vigas e lajes", method: "Os furos para passagens da tubulação estão de acordo com o projeto estrutural?" },
+                        { id: 6, item: "Passagem por paredes", method: "A travessia de tubulação em paredes de drywall e alvenaria está protegida com passa-muro?" },
+                        { id: 7, item: "Teste de estanqueidade", method: "O teste de estanqueidade na linha frigorígena foi realizado com Nitrogênio?" }
+                    ]
+                },
+                'instalacao_gas': {
+                    subtitle: "FVS 024.3: INSTALAÇÃO DE GÁS",
+                    items: [
+                        { id: 1, item: "Material", method: "O material da tubulação está de acordo com o projeto?" },
+                        { id: 2, item: "Locação dos pontos", method: "Os pontos de gás estão posicionados conforme o projeto?" },
+                        { id: 3, item: "Proteção anticorrosiva", method: "A tubulação de aço carbono está protegida com pintura anticorrosiva (epóxi)?" },
+                        { id: 4, item: "Estanqueidade", method: "Foi realizado o teste de estanqueidade da tubulação?" },
+                        { id: 5, item: "Abrigo do medidor", method: "O abrigo para medidor está conforme padrão da concessionária?" },
+                        { id: 6, item: "Ventilação", method: "O ambiente possui ventilação permanente?" }
+                    ]
+                },
+                'instalacao_bancada': {
+                    subtitle: "FVS 025: INSTALAÇÃO DE BANCADA",
+                    items: [
+                        { id: 1, item: "Nível", method: "A bancada está instalada no nível?" },
+                        { id: 2, item: "Fixação", method: "A fixação da bancada está segura?" },
+                        { id: 3, item: "Vedação", method: "Foi feita a vedação entre a bancada e a parede?" },
+                        { id: 4, item: "Imperfeições", method: "A pedra não apresenta trincas ou lascas?" }
+                    ]
+                },
+                'instalacao_loucas_metais': {
+                    subtitle: "FVS 025.01: INSTALAÇÃO DE LOUÇAS E METAIS",
+                    items: [
+                        { id: 1, item: "Locação", method: "Os pontos de água e esgoto estão de acordo com os centros da louça (bacia, cuba)?" },
+                        { id: 2, item: "Fixação", method: "A bacia sanitária está fixada ao piso e vedada com anel de vedação? A cuba está nivelada e fixada na bancada?" },
+                        { id: 3, item: "Vazamentos", method: "Não há vazamentos após a abertura dos registros?" },
+                        { id: 4, item: "Acabamento", method: "As peças estão sem riscos ou defeitos?" }
+                    ]
+                },
+                'producao_argamassa': {
+                    subtitle: "FVS 026.01: PRODUÇÃO MATERIAL - ARGAMASSA",
+                    items: [
+                        { id: 1, item: "Traço", method: "O traço está de acordo com o especificado?" },
+                        { id: 2, item: "Mistura", method: "A argamassa está com aspecto homogêneo?" },
+                        { id: 3, item: "Consistência", method: "A consistência da argamassa está adequada ao uso?" }
+                    ]
+                },
+                'producao_concreto': {
+                    subtitle: "FVS 026.02: PRODUÇÃO MATERIAL - CONCRETO",
+                    items: [
+                        { id: 1, item: "Traço", method: "O traço está de acordo com o especificado?" },
+                        { id: 2, item: "Mistura", method: "O concreto está com aspecto homogêneo?" },
+                        { id: 3, item: "Consistência", method: "A consistência do concreto (slump test) está de acordo com o especificado?" }
+                    ]
+                },
+                'producao_graute': {
+                    subtitle: "FVS 026.03: PRODUÇÃO MATERIAL - GRAUTE",
+                    items: [
+                        { id: 1, item: "Traço", method: "O traço está de acordo com o especificado?" },
+                        { id: 2, item: "Mistura", method: "O graute está com aspecto homogêneo?" },
+                        { id: 3, item: "Consistência", method: "A consistência do graute está adequada ao uso (fluidez)?" }
+                    ]
+                },
+                'producao_argamassa_estruturante': {
+                    subtitle: "FVS 027: PRODUÇÃO MATERIAL - ARGAMASSA DE ASSENTAMENTO ESTRUTURANTE",
+                    items: [
+                        { id: 1, item: "O traço está de acordo com o especificado?", method: "Visual" },
+                        { id: 2, item: "A argamassa está com aspecto homogêneo?", method: "Visual" },
+                        { id: 3, item: "A consistência da argamassa está adequada ao uso?", method: "Visual" },
+                        { id: 4, item: "Foram moldados corpos de prova para ensaio de resistência?", method: "Visual" }
+                    ]
+                },
+            };
+
+
+            // --- VARIÁVEIS GLOBAIS ---
+            let currentFvsKey = null;
+            let checklistItems = [];
+            let specialChecklistItems = [];
+            const USER_DATA_KEY = 'fvsUserData';
+
+            // --- ELEMENTOS DO DOM ---
+            const loginScreen = document.getElementById('login-screen');
+            const selectionScreen = document.getElementById('selection-screen');
+            const appContainer = document.getElementById('app-container');
+            const fvs1602Container = document.getElementById('fvs-16-02-container');
+            const fvsOptionsContainer = document.getElementById('fvs-options-container');
+            const checklistContainer = document.getElementById('checklist-container');
+            const checklistContainer1602 = document.getElementById('checklist-container-16-02');
+
+
+            const loginElements = {
+                inspector: document.getElementById('login_inspector'),
+                obra: document.getElementById('login_obra'),
+                obra_outros: document.getElementById('login_obra_outros'),
+                outros_container: document.getElementById('login_outros_obra_container'),
+                continueBtn: document.getElementById('login-continue-btn'),
+            };
+
             const formElements = {
+                fvs_title: document.getElementById('fvs-title'),
+                fvs_subtitle: document.getElementById('fvs-subtitle'),
                 obra: document.getElementById('obra'),
                 obra_outros: document.getElementById('obra_outros'),
+                outros_container: document.getElementById('outros_obra_container'),
                 local: document.getElementById('local'),
                 inspecionado_por: document.getElementById('inspecionado_por'),
                 executado_por: document.getElementById('executado_por'),
@@ -208,6 +828,61 @@
                 non_compliant_count: document.getElementById('non-compliant-count'),
                 final_score: document.getElementById('final-score'),
             };
+            
+            const form1602Elements = {
+                 obra: document.getElementById('fvs1602_obra'),
+                 inspector: document.getElementById('fvs1602_inspector'),
+                 local: document.getElementById('fvs1602_local'),
+                 empresa: document.getElementById('fvs1602_empresa'),
+                 tipo_imper: document.getElementById('fvs1602_tipo_imper'),
+                 produtos: document.getElementById('fvs1602_produtos'),
+                 inicio: document.getElementById('fvs1602_inicio'),
+                 fim: document.getElementById('fvs1602_fim'),
+                 photo_input: document.getElementById('fvs1602_photo_input'),
+                 photo_preview: document.getElementById('fvs1602_photo_preview'),
+                 observation: document.getElementById('fvs1602_observation')
+            };
+
+            // --- FUNÇÕES PRINCIPAIS ---
+            
+            function showLoginScreen() {
+                appContainer.classList.add('hidden');
+                selectionScreen.classList.add('hidden');
+                fvs1602Container.classList.add('hidden');
+                loginScreen.classList.remove('hidden');
+            }
+            
+            function showSelectionScreen() {
+                appContainer.classList.add('hidden');
+                loginScreen.classList.add('hidden');
+                fvs1602Container.classList.add('hidden');
+                selectionScreen.classList.remove('hidden');
+                currentFvsKey = null;
+            }
+
+            function showApp(fvsKey) {
+                currentFvsKey = fvsKey;
+                const fvsData = fvsDatabase[fvsKey];
+                
+                loginScreen.classList.add('hidden');
+                selectionScreen.classList.add('hidden');
+
+                if (fvsData.isSpecial) {
+                    appContainer.classList.add('hidden');
+                    fvs1602Container.classList.remove('hidden');
+                    loadSpecialFvs();
+                } else {
+                    fvs1602Container.classList.add('hidden');
+                    appContainer.classList.remove('hidden');
+                    formElements.fvs_title.textContent = "Ficha de Verificação de Serviço (FVS)";
+                    formElements.fvs_subtitle.textContent = fvsData.subtitle;
+                    loadProgress();
+                }
+            }
+
+            function getStorageKey() {
+                return `fvsData_${currentFvsKey}`;
+            }
 
             function calculateAndDisplayScore() {
                 const totalItems = checklistItems.length;
@@ -215,78 +890,152 @@
 
                 const compliantCount = checklistItems.filter(item => item.status === 'A' || item.status === 'AR').length;
                 const nonCompliantCount = checklistItems.filter(item => item.status === 'NA').length;
-                const score = (compliantCount / totalItems) * 100;
+                const score = totalItems > 0 ? (compliantCount / totalItems) * 100 : 0;
 
                 formElements.compliant_count.textContent = compliantCount;
                 formElements.non_compliant_count.textContent = nonCompliantCount;
                 formElements.final_score.textContent = `${score.toFixed(0)}%`;
             }
 
-            function toggleOutrosField() {
-                const outrosContainer = document.getElementById('outros_obra_container');
-                if (formElements.obra.value === 'OUTROS') {
-                    outrosContainer.classList.remove('hidden');
-                } else {
-                    outrosContainer.classList.add('hidden');
-                    formElements.obra_outros.value = '';
-                }
-            }
-
             function saveProgress() {
+                if (!currentFvsKey) return;
                 const dataToSave = {
                     formData: {
-                        obra: formElements.obra.value,
-                        obra_outros: formElements.obra_outros.value,
                         local: formElements.local.value,
-                        inspecionado_por: formElements.inspecionado_por.value,
                         executado_por: formElements.executado_por.value,
                         data_inspecao: formElements.data_inspecao.value,
                     },
                     items: checklistItems
                 };
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+                localStorage.setItem(getStorageKey(), JSON.stringify(dataToSave));
+            }
+            
+             function saveSpecialFvs() {
+                if(currentFvsKey !== 'rastreabilidade_impermeabilizacao') return;
+                const dataToSave = {
+                    formData: {
+                        local: form1602Elements.local.value,
+                        empresa: form1602Elements.empresa.value,
+                        tipo_imper: form1602Elements.tipo_imper.value,
+                        produtos: form1602Elements.produtos.value,
+                        inicio: form1602Elements.inicio.value,
+                        fim: form1602Elements.fim.value,
+                        observation: form1602Elements.observation.value,
+                        photo: form1602Elements.photo_preview.src.startsWith('data:image') ? form1602Elements.photo_preview.src : null
+                    },
+                    items: specialChecklistItems
+                };
+                 localStorage.setItem(getStorageKey(), JSON.stringify(dataToSave));
             }
 
             function loadProgress() {
-                const savedData = localStorage.getItem(STORAGE_KEY);
+                if (!currentFvsKey) return;
+
+                const userData = JSON.parse(localStorage.getItem(USER_DATA_KEY));
+                if (userData) {
+                    formElements.inspecionado_por.value = userData.inspector;
+                    formElements.obra.value = userData.obra;
+                    if(userData.obra === 'OUTROS') {
+                        formElements.outros_container.classList.remove('hidden');
+                        formElements.obra_outros.value = userData.obra_outros;
+                    } else {
+                        formElements.outros_container.classList.add('hidden');
+                        formElements.obra_outros.value = '';
+                    }
+                }
+                
+                const savedData = localStorage.getItem(getStorageKey());
+                const initialItems = fvsDatabase[currentFvsKey].items;
+
                 if (savedData) {
                     const parsedData = JSON.parse(savedData);
                     checklistItems = parsedData.items;
-                    Object.keys(parsedData.formData).forEach(key => {
-                        if (parsedData.formData[key] && formElements[key] && formElements[key].type !== 'button' && formElements[key].type !== 'submit') {
+                     Object.keys(parsedData.formData).forEach(key => {
+                        if (parsedData.formData[key] && formElements[key]) {
                            formElements[key].value = parsedData.formData[key];
                         }
                     });
                 } else {
-                    checklistItems = initialItems.map(item => ({ ...item, status: 'P', observation: '', photo: null }));
+                    checklistItems = initialItems.map((item, index) => ({ id: index + 1, ...item, status: 'P', observation: '', photo: null }));
+                    formElements.local.value = '';
+                    formElements.executado_por.value = '';
                     formElements.data_inspecao.value = new Date().toISOString().split('T')[0];
                 }
-                toggleOutrosField();
+                
                 renderItems();
                 calculateAndDisplayScore();
             }
             
+            function loadSpecialFvs() {
+                 if(currentFvsKey !== 'rastreabilidade_impermeabilizacao') return;
+
+                 const userData = JSON.parse(localStorage.getItem(USER_DATA_KEY));
+                 if(userData){
+                    form1602Elements.inspector.value = userData.inspector;
+                    let obraText = userData.obra;
+                    if(obraText === 'OUTROS' && userData.obra_outros) {
+                        obraText = userData.obra_outros;
+                    }
+                    form1602Elements.obra.value = obraText;
+                 }
+                 
+                 const savedData = localStorage.getItem(getStorageKey());
+                 const initialItems = fvsDatabase[currentFvsKey].items;
+
+                 if(savedData) {
+                    const parsedData = JSON.parse(savedData);
+                    specialChecklistItems = parsedData.items;
+                    Object.keys(parsedData.formData).forEach(key => {
+                        if(form1602Elements[key] && typeof form1602Elements[key].value !== 'undefined') {
+                            form1602Elements[key].value = parsedData.formData[key];
+                        }
+                    });
+                    if (parsedData.formData.photo) {
+                        form1602Elements.photo_preview.src = parsedData.formData.photo;
+                        form1602Elements.photo_preview.classList.remove('hidden');
+                    } else {
+                        form1602Elements.photo_preview.src = '';
+                        form1602Elements.photo_preview.classList.add('hidden');
+                    }
+                 } else {
+                    specialChecklistItems = initialItems.map((item, index) => ({...item, id: index + 1, status: 'P', observation: ''}));
+                    Object.keys(form1602Elements).forEach(key => {
+                         if(key !== 'obra' && key !== 'inspector' && form1602Elements[key].tagName !== 'IMG') {
+                            form1602Elements[key].value = '';
+                         }
+                    });
+                     form1602Elements.photo_preview.src = '';
+                     form1602Elements.photo_preview.classList.add('hidden');
+                 }
+                 renderSpecialChecklist();
+            }
+            
             function clearForm() {
-                if(confirm('Você tem certeza que deseja limpar todos os dados do formulário? Esta ação não pode ser desfeita.')) {
-                    localStorage.removeItem(STORAGE_KEY);
-                    checklistItems = [];
-                    formElements.obra.value = 'MOOV';
-                    formElements.obra_outros.value = '';
-                    formElements.local.value = '';
-                    formElements.inspecionado_por.value = '';
-                    formElements.executado_por.value = '';
+                if (!currentFvsKey) return;
+                if (confirm('Você tem certeza que deseja limpar todos os dados desta FVS? Esta ação não pode ser desfeita.')) {
+                    localStorage.removeItem(getStorageKey());
                     loadProgress();
                 }
             }
+
+            function clearSpecialForm() {
+                if (confirm('Você tem certeza que deseja limpar todos os dados desta FVS? Esta ação não pode ser desfeita.')) {
+                    localStorage.removeItem(getStorageKey());
+                    loadSpecialFvs();
+                }
+            }
             
-            document.getElementById('clear-form-btn').addEventListener('click', clearForm);
-            formElements.obra.addEventListener('change', () => {
-                toggleOutrosField();
-                saveProgress();
-            });
+            function toggleOutrosField(selectElement, containerElement) {
+                if (selectElement.value === 'OUTROS') {
+                    containerElement.classList.remove('hidden');
+                } else {
+                    containerElement.classList.add('hidden');
+                    containerElement.querySelector('input').value = '';
+                }
+            }
 
             function renderItems() {
-                container.innerHTML = '';
+                checklistContainer.innerHTML = '';
                 checklistItems.forEach(itemData => {
                     const itemElement = document.createElement('div');
                     itemElement.className = 'checklist-grid-row p-3 border-t border-gray-700 items-start md:items-center';
@@ -310,20 +1059,49 @@
                             </div>
                         </div>
                     `;
-                    container.appendChild(itemElement);
+                    checklistContainer.appendChild(itemElement);
                 });
                 attachEventListeners();
+            }
+
+            function renderSpecialChecklist(){
+                checklistContainer1602.innerHTML = '';
+                 specialChecklistItems.forEach(itemData => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'grid grid-cols-1 md:grid-cols-3 gap-4 p-3 border-t border-gray-700 items-center';
+                    itemElement.innerHTML = `
+                        <div class="md:col-span-2 text-sm text-gray-200">${itemData.item}</div>
+                        <div class="flex items-center gap-2 status-btn-group" data-id="${itemData.id}">
+                           <button title="Aprovado" data-status="A" class="special-status-btn ${itemData.status === 'A' ? 'active' : ''} bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-md transition-all text-sm">Aprovado</button>
+                           <button title="Não Aprovado" data-status="NA" class="special-status-btn ${itemData.status === 'NA' ? 'active' : ''} bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded-md transition-all text-sm">Não Aprovado</button>
+                        </div>
+                    `;
+                    checklistContainer1602.appendChild(itemElement);
+                 });
+                 attachSpecialEventListeners();
             }
             
             function attachEventListeners() {
                  document.querySelectorAll('.status-btn').forEach(btn => btn.addEventListener('click', handleStatusClick));
                  document.querySelectorAll('.observation-text').forEach(area => area.addEventListener('input', handleObservationInput));
                  document.querySelectorAll('.photo-upload-input').forEach(input => input.addEventListener('change', handlePhotoUpload));
-                 Object.values(formElements).forEach(el => {
-                    if(el.id.includes('count') || el.id.includes('score')) return;
-                    el.addEventListener('input', saveProgress)
-                 });
+                 
+                 formElements.local.addEventListener('input', saveProgress);
+                 formElements.executado_por.addEventListener('input', saveProgress);
+                 formElements.data_inspecao.addEventListener('input', saveProgress);
             }
+
+            function attachSpecialEventListeners() {
+                document.querySelectorAll('.special-status-btn').forEach(btn => btn.addEventListener('click', handleSpecialStatusClick));
+                Object.values(form1602Elements).forEach(el => {
+                    if (el.type !== 'file' && !el.id.includes('preview')) {
+                         el.addEventListener('input', saveSpecialFvs);
+                    }
+                });
+                form1602Elements.photo_input.addEventListener('change', handleSpecialPhotoUpload);
+            }
+
+            // --- MANIPULADORES DE EVENTOS ---
 
             function handleStatusClick(e) {
                 const button = e.currentTarget;
@@ -338,6 +1116,20 @@
                 
                 calculateAndDisplayScore();
                 saveProgress();
+            }
+
+            function handleSpecialStatusClick(e) {
+                const button = e.currentTarget;
+                const id = parseInt(button.parentElement.dataset.id);
+                const status = button.dataset.status;
+                const item = specialChecklistItems.find(i => i.id === id);
+                item.status = status;
+                
+                const buttonsInGroup = button.parentElement.querySelectorAll('.special-status-btn');
+                buttonsInGroup.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                saveSpecialFvs();
             }
 
             function handleObservationInput(e) {
@@ -374,18 +1166,66 @@
                 reader.readAsDataURL(file);
             }
 
-            const generatePdfBtn = document.getElementById('generate-pdf-btn');
-            const loaderContainer = document.getElementById('loader-container');
+            function handleSpecialPhotoUpload(e) {
+                 const input = e.currentTarget;
+                 const file = input.files[0];
+                 if(!file) return;
+
+                 const reader = new FileReader();
+                 reader.onload = function(event) {
+                    const photoData = event.target.result;
+                    form1602Elements.photo_preview.src = photoData;
+                    form1602Elements.photo_preview.classList.remove('hidden');
+                    saveSpecialFvs();
+                 };
+                 reader.readAsDataURL(file);
+            }
+
+            document.getElementById('back-to-selection-btn').addEventListener('click', showSelectionScreen);
+            document.getElementById('clear-form-btn').addEventListener('click', clearForm);
+            document.getElementById('back-to-selection-btn-16-02').addEventListener('click', showSelectionScreen);
+            document.getElementById('clear-form-btn-16-02').addEventListener('click', clearSpecialForm);
+
             
-            generatePdfBtn.addEventListener('click', () => {
-                generatePdfBtn.style.display = 'none';
-                clearFormBtn.style.display = 'none';
-                loaderContainer.style.display = 'flex';
+            // Login screen logic
+            loginElements.obra.addEventListener('change', () => toggleOutrosField(loginElements.obra, loginElements.outros_container));
+            loginElements.continueBtn.addEventListener('click', () => {
+                if (!loginElements.inspector.value) {
+                    alert('Por favor, informe o seu nome para continuar.');
+                    return;
+                }
+                const userData = {
+                    inspector: loginElements.inspector.value,
+                    obra: loginElements.obra.value,
+                    obra_outros: loginElements.obra_outros.value
+                };
+                localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+                showSelectionScreen();
+            });
+
+
+            document.getElementById('generate-pdf-btn').addEventListener('click', () => {
+                generatePdf(document.getElementById('pdf-content'));
+            });
+
+            document.getElementById('generate-pdf-btn-16-02').addEventListener('click', () => {
+                 generatePdf(document.getElementById('pdf-content-16-02'), '-16-02');
+            });
+
+            function generatePdf(element, suffix = '') {
+                const generateBtn = document.getElementById(`generate-pdf-btn${suffix}`);
+                const loaderContainer = document.getElementById(`loader-container${suffix}`);
+                const clearBtn = document.getElementById(`clear-form-btn${suffix}`);
+                const backBtn = document.getElementById(`back-to-selection-btn${suffix}`);
+
+                if(generateBtn) generateBtn.style.display = 'none';
+                if(clearBtn) clearBtn.style.display = 'none';
+                if(backBtn) backBtn.style.display = 'none';
+                if(loaderContainer) loaderContainer.style.display = 'flex';
                 
                 const { jsPDF } = window.jspdf;
-                const pdfContent = document.getElementById('pdf-content');
 
-                html2canvas(pdfContent, {
+                html2canvas(element, {
                     scale: 2,
                     backgroundColor: '#1f2937',
                     useCORS: true,
@@ -418,21 +1258,68 @@
                         heightLeft -= pdfHeight;
                     }
                     
-                    let obra = formElements.obra.value;
+                    let obra = JSON.parse(localStorage.getItem(USER_DATA_KEY)).obra;
                     if (obra === 'OUTROS') {
-                       obra = formElements.obra_outros.value.replace(/ /g, '_') || 'Outros';
+                       obra = JSON.parse(localStorage.getItem(USER_DATA_KEY)).obra_outros.replace(/ /g, '_') || 'Outros';
                     }
+                    const fvsId = fvsDatabase[currentFvsKey].subtitle.split(':')[0].replace(/[\s.]/g, '_');
                     const today = new Date().toISOString().split('T')[0];
-                    pdf.save(`FVS_Piso_Vinilico_${obra}_${today}.pdf`);
+                    pdf.save(`${fvsId}_${obra}_${today}.pdf`);
                     
-                    generatePdfBtn.style.display = 'inline-block';
-                    clearFormBtn.style.display = 'inline-block';
-                    loaderContainer.style.display = 'none';
+                    if(generateBtn) generateBtn.style.display = 'inline-block';
+                    if(clearBtn) clearBtn.style.display = 'inline-block';
+                    if(backBtn) backBtn.style.display = 'inline-block';
+                    if(loaderContainer) loaderContainer.style.display = 'none';
                 });
-            });
-            const clearFormBtn = document.getElementById('clear-form-btn');
-            
-            loadProgress();
+            }
+
+            // --- INICIALIZAÇÃO ---
+            function initialize() {
+                const sortedKeys = Object.keys(fvsDatabase).sort((a, b) => {
+                    const numStrA = fvsDatabase[a].subtitle.match(/FVS\s*([\d\.]+)/)[1];
+                    const numStrB = fvsDatabase[b].subtitle.match(/FVS\s*([\d\.]+)/)[1];
+                    
+                    const partsA = numStrA.split('.').map(Number);
+                    const partsB = numStrB.split('.').map(Number);
+
+                    for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+                        const valA = partsA[i] || 0;
+                        const valB = partsB[i] || 0;
+                        if (valA !== valB) {
+                            return valA - valB;
+                        }
+                    }
+                    return 0;
+                });
+
+                sortedKeys.forEach(key => {
+                    const fvs = fvsDatabase[key];
+                    const card = document.createElement('div');
+                    card.className = 'fvs-card bg-gray-800 p-6 rounded-lg cursor-pointer hover:bg-gray-700 flex flex-col justify-between';
+                    card.innerHTML = `
+                        <div>
+                            <p class="text-sm text-gray-400">${fvs.subtitle.split(':')[0]}</p>
+                            <h3 class="text-lg font-bold text-white mt-1">${fvs.subtitle.split(':')[1].trim()}</h3>
+                        </div>
+                    `;
+                    card.addEventListener('click', () => showApp(key));
+                    fvsOptionsContainer.appendChild(card);
+                });
+                
+                const userData = localStorage.getItem(USER_DATA_KEY);
+                if (userData) {
+                    const parsedData = JSON.parse(userData);
+                    loginElements.inspector.value = parsedData.inspector;
+                    loginElements.obra.value = parsedData.obra;
+                    loginElements.obra_outros.value = parsedData.obra_outros;
+                    toggleOutrosField(loginElements.obra, loginElements.outros_container);
+                    showSelectionScreen();
+                } else {
+                    showLoginScreen();
+                }
+            }
+
+            initialize();
         });
     </script>
 </body>
